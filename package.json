@@ -1,0 +1,17 @@
+{
+  "devDependencies": {
+    "tree-sitter-cli": "^0.22.6"
+  },
+  "dependencies": {
+    "nan": "^2.20.0"
+  },
+  "name": "tree-sitter-anzu",
+  "version": "1.0.0",
+  "main": "grammar.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
