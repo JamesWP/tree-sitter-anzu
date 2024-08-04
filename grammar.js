@@ -4,12 +4,19 @@
 module.exports = grammar({
   name: 'anzu',
 
+  word: $ => $.identifier,
+
+  extras: $ => [
+    /\s|\\\r?\n/, // whitespace is ignored
+    $.comment,    // comments are ignored
+  ],
+
   rules: {
-    source_file: $ => choice(
+    source_file: $ => repeat(choice(
       $.statement,
       $.function_definition,
       $.struct_definition,
-    ),
+    )),
 
 /** 
  *             STRUCTS & FUNCTIONS 
@@ -59,33 +66,65 @@ module.exports = grammar({
       $.expression_statement,
     ),
 
-    let_statement: $ => seq('let', 'TODO', ';'),
+    let_statement: $ => seq('let', $._variable_declaration, ';'),
 
-    var_statement: $ => seq('var', 'TODO', ';'),
+    var_statement: $ => seq('var', $._variable_declaration, ';'),
 
     compound_statement: $ => seq('{', repeat($.statement), '}'),
 
-    return_statement: $ => seq('return', 'TODO', ';'),
+    return_statement: $ => seq('return', optional($.expression), ';'),
 
     for_statement: $ => seq('for', 'TODO', ';'),
 
     if_statement: $ => seq('if', 'TODO', ';'),
 
     expression_statement: $ => seq($.expression, ';'),
+  
+    _variable_declaration: $ => seq(
+      field('name', $.identifier), 
+      optional(choice(
+        seq(
+          ':=', 
+          field('value', $.expression),
+        ),
+        seq(
+          ':', 
+          field('type', $.type_specifier),
+          '=',
+          field('value', $.expression),
+        ),
+      )), 
+    ),
 
 
 /** 
- *             MISC 
+ *             COMMON
  **/  
-    identifier: _ => /[a-z]+/,
+    identifier: _ => /[A-Za-z_][A-Za-z0-9_]*/,
 
     type_specifier: $ => 'TODO',
+
+
+/**
+ *             MISC
+ **/
+    comment: _ => token(choice(
+      seq('#', /(\\+(.|\r?\n)|[^\\\n])*/),
+      // TODO: Maybe add multi line comment block?
+    )),
 
 
 /** 
  *             EXPRESSIONS 
  **/  
-    expression: $ => 'TODO',
+    expression: $ => choice(
+      $.number_literal,
+      $.string_literal 
+    ),
+
+    number_literal: $ => /[0-9]+(.[0-9]+)?u?/,
+
+    string_literal: $ => /"[^"]*"/,
   }
 });
 
