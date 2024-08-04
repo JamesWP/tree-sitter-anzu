@@ -1,0 +1,50 @@
+let variable := 0;
+
+let variable := 0u;
+
+var e := a;
+
+# Comment
+fn simple()
+{
+    return 1;
+}
+
+{
+    for v in arr {
+        print(1);
+    }
+}
+
+# if with else
+{
+    if 2 < 1 {
+        # never entered
+    } else {
+    }
+}
+
+
+let a := [1; 5u];
+
+let f := foo(1, 2);
+
+let f:u64 = 1;
+let f:f64 = 1.0;
+
+print("hello world");
+
+struct test
+{
+    x: f64;
+}
+
+struct test
+{
+    x: f64;
+
+    fn length() -> f64
+    {
+      return 1.0;
+    }
+}

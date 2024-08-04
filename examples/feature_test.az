@@ -1,0 +1,334 @@
+# tests all language features, here is a comment
+
+# declaring immutable variables
+{
+    # from literals
+    let a := 1;               # ints
+    let b := true;            # bools
+    let c := "hello world\n"; # string literal
+    let d := [1, 2, 3];       # array
+
+    # from variables
+    let e := a;
+}
+
+# declaring mutable variables
+{
+    # from literals
+    var a := 1;               # ints
+    var b := true;            # bools
+    var c := "hello world\n"; # string literal
+    var d := [1, 2, 3];       # array
+
+    # from variables
+    var e := a;
+}
+
+
+# modulus
+{
+    let a := 10;
+    let b := 5 % 2;
+}
+
+# while-statements
+{
+    var idx := 0;
+    print("count to 10: ");
+    while idx < 10 {
+        print("{} ", idx);
+        idx = idx + 1;
+    }
+    print("\n");
+}
+
+# if-statements
+# basic if
+{
+    if true {
+        print("in true block\n");
+    }
+}
+
+# if with else
+{
+    if 2 < 1 {
+        # never entered
+    } else {
+        print("in else block\n");
+    }
+}
+
+# if with elif
+{
+    if 1 > 3 {
+        # not entered
+    } else if 2 == 1 + 1 {  # also testing an expression
+        print("i just evaluated 2 == 1 + 1\n");
+    }
+}
+
+# if with elif and else
+{
+    if false {
+        # nah
+    } else if false {
+        # also nah
+    } else {
+        print("in else after skipping the if and elif\n");
+    }
+}
+
+# simple expressions
+{
+    print("{}\n", 2 + 2);
+    print("{}\n", 8 * (1 + 6) > 5);
+    print("{}\n", true && true);
+    print("{}\n", true && false);
+    print("{}\n", true || false);
+}
+
+# functions
+fn adder(a: i64, b: i64, c: i64) -> i64
+{
+    return a + b + c;
+}
+
+{
+    print("Does adder(1, 2, 3) == 6? ");
+    if adder(1, 2, 3) == 6 {
+        print("yes\n");
+    } else {
+        print("no\n");
+    }
+}
+
+# Allowing functions from other functions
+fn add2(x: i64, y: i64) -> i64
+{
+    return x + y;
+}
+
+fn add3(x: i64, y: i64, z: i64) -> i64
+{
+    return add2(x, add2(y, z));
+}
+
+print("{}", add3(1, 2, 3));
+
+# Struct definition
+struct vec2
+{
+    x: i64;
+    y: i64;
+}
+
+fn print_vec2(v: vec2) -> null
+{
+    print("vec2 = ({}, {})\n", v.x, v.y);
+}
+
+# Attribute access
+{
+    var my_vec := vec2(1, 2);
+    print_vec2(my_vec);
+    print("my_vec = ({}, {})\n", my_vec.x, my_vec.y);
+    my_vec.x = 5;
+    print("my_vec = ({}, {})\n", my_vec.x, my_vec.y);
+}
+
+# Pointers
+{
+    var p_value := 5;
+    let p := p_value&;
+    p@ = 6;
+    print("p_value should now equal 6: {}\n", p_value);
+}
+
+# Arrays
+{
+    var xl := [1, 2, 3, 4];
+    xl[2u] = 0;
+    print("Size of array is 4: {}\n", sizeof(xl));
+
+    let xl2 := [vec2(1, 2), vec2(3, 4)];
+    print(
+        "xl2 should have size 32 but length 2: size={} length={}\n",
+        sizeof(xl2),
+        sizeof(xl2) / sizeof(xl2[0u])
+    );
+}
+
+# Member functions
+fn square(x: f64) -> f64
+{
+    return x * x;
+}
+
+struct vec3
+{
+    x: f64;
+    y: f64;
+    z: f64;
+
+    fn length(self: vec3 const&) -> f64
+    {
+        let x_squared := square(self.x);
+        let y_squared := square(self.y);
+        let z_squared := square(self.z);
+        return sqrt(x_squared + y_squared + z_squared);
+    }
+}
+
+# Member function testing
+{
+    var v := vec3(3.0, 4.0, 5.0);
+    print("length of vec3(3.0, 4.0, 5.0): {}\n", v.length());
+}
+
+# Repeat-element syntax for arrays
+{
+    let a := [1; 5u];
+    let b := [1, 1, 1, 1, 1];
+
+    var idx := 0u;
+    while idx != sizeof(a) / sizeof(a[0u]) {
+        print("{}\n", a[idx] == b[idx]);
+        idx = idx + 1u;
+    }
+} 
+
+# for loops
+# rvalue
+{
+    for v in [vec2(1, 2), vec2(3, 4), vec2(5, 6)] {
+        print("({}, {})\n", v.x, v.y);
+    }
+
+    var arr := [vec2(1, 2), vec2(3, 4), vec2(5, 6)];
+    for v in arr {
+        print("({}, {})\n", v.x, v.y);
+    }
+}
+
+# typeof operator
+let variable := 0;
+fn typeof_example(y: typeof(variable)) -> i64
+{
+    return y + y;
+}
+print("{}\n", typeof_example(3)); # no error here!
+
+fn typeof_example2(a: u64) -> typeof(a)
+{
+    return a * a;
+}
+print("{}\n", typeof_example2(6u));
+
+{
+    var v1 := vec3(1.0, 1.0, 1.0);
+    var v2 := vec3(2.0, 2.0, 2.0);
+    var v3 := vec3(3.0, 3.0, 3.0);
+
+    v1 = v3;
+    print("{}\n", v1.x);
+}
+
+struct container
+{
+    val: i64;
+}
+
+# Pointer auto dereference
+{
+    let x := container(5);
+    let p := x&;
+    print("{}\n", p.val);
+}
+
+# Function pointer check
+fn print_success() -> null
+{
+    print("Success!\n");
+}
+
+var function_ptr := print_success;
+function_ptr();
+
+# Arena test
+fn get(a: arena&, count: u64) -> u64[]
+{
+    var p := a.new_array!(u64)(count);
+    var idx := 0u;
+    while idx < p.size() {
+        p[idx] = idx;
+        idx = idx + 1u;
+    }
+    return p;
+}
+
+{
+    arena a;
+    var z := get(a&, 5u);
+    print("size={} capacity={}\n", a.size(), a.capacity());
+
+    var idx := 0u;
+    while idx < z.size() {
+        print("{}\n", z[idx])
+        idx = idx + 1u;
+    }
+}
+
+fn read_file(filename: char const[], a: arena&) -> char const[]
+{
+    let f := fopen(filename, "rb");
+    let contents := fread(f, a);
+    fclose(f);
+    return contents;
+}
+
+arena a;
+let contents := read_file("examples/example_data.txt", a&);
+
+print("'{}'\n", contents);
+print("\nsize={}\n", contents.size());
+
+# nullptr checks
+{
+    var p : i64& = nullptr;
+    var q : i64& = nullptr;
+    print("{}\n", p == q);
+
+    var x := 10;
+    p = x&;
+    print("comparison of a pointer {} to nullptr: {}\n", p, p == nullptr);
+}
+
+# template tests
+fn do!(T)(x: T) -> T
+{
+    print("{} {}\n", x.x, x.y);
+    return T(10, 20);
+}
+
+fn ptr!(T)(x: T&) { print("{}\n", x); }
+
+struct foo
+{
+    x: i64;
+    y: i64;
+
+    fn bar!(T)(self: foo const&, x: T)
+    {
+        print("{}\n", x);
+    }
+}
+
+let f := foo(1, 2);
+let g := do!(foo)(f);
+print("{} {}\n", g.x, g.y);
+
+var x := 10;
+ptr!(i64)(x&);
+
+f.bar!(i64)(6);
