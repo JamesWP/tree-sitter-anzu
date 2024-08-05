@@ -89,6 +89,7 @@ module.exports = grammar({
       $.compound_statement,
       $.return_statement,
       $.for_statement,
+      $.while_statement,
       $.if_statement,
       $.expression_statement,
     ),
@@ -102,6 +103,8 @@ module.exports = grammar({
     return_statement: $ => seq('return', optional($.expression), ';'),
 
     for_statement: $ => seq('for', $.expression, 'in', $.expression, $.compound_statement),
+
+    while_statement: $ => seq('while', $.expression, $.compound_statement),
 
     if_statement: $ => seq(
       'if', 
@@ -163,12 +166,17 @@ module.exports = grammar({
       $.number_literal,
       $.string_literal,
       $.array_literal,
+      $.array_initializer_literal,
       $.bool_literal,
       $.identifier,
       $.compound_identifier,
       $.call_expression,
       $.binary_expression,
+      $.assignment_expression,
+      $.parenthesized_expression,
     ),
+
+    parenthesized_expression: $ => seq('(', $.expression, ')'),
 
     // Shameless copy from tree-sitter-c
     binary_expression: $ => {
@@ -203,6 +211,30 @@ module.exports = grammar({
       }));
     },
 
+    assignment_expression: $ => prec.right(PREC.ASSIGNMENT, seq(
+      field('left', $._assignment_left_expression),
+      field('operator', choice(
+        '=',
+        '*=',
+        '/=',
+        '%=',
+        '+=',
+        '-=',
+        '<<=',
+        '>>=',
+        '&=',
+        '^=',
+        '|=',
+      )),
+      field('right', $.expression),
+    )),
+
+    _assignment_left_expression: $ => choice(
+      $.identifier,
+      $.call_expression,
+      $.parenthesized_expression,
+    ),
+
     call_expression: $ => seq(
       field('function_expression', $.expression), 
       '(', 
@@ -216,13 +248,15 @@ module.exports = grammar({
 
     bool_literal: $ => choice('true', 'false'),
 
-    array_literal: $ => seq(
+    array_initializer_literal: $ => seq(
       '[', 
         field('value', $.expression), 
         ';', 
         field('count', $.number_literal), 
       ']'
     ),
+
+    array_literal: $ => seq('[', commaSep($.expression), ']'),
   }
 });
 
