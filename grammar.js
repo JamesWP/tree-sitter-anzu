@@ -23,7 +23,8 @@ const PREC = {
   UNARY: 14,
   CALL: 15,
   FIELD: 16,
-  SUBSCRIPT: 17,
+  POSTFIX_UNARY: -4,
+  TYPE_SUFFIX: 0, // TODO: not sure if this is right or not
 };
 
 module.exports = grammar({
@@ -34,6 +35,11 @@ module.exports = grammar({
   extras: $ => [
     /\s|\\\r?\n/, // whitespace is ignored
     $.comment,    // comments are ignored
+  ],
+
+  conflicts: $ => [
+    [$.assignment_expression, $.binary_expression, $.pointer_expression],
+    [$.binary_expression, $.pointer_expression]
   ],
 
   rules: {
@@ -50,6 +56,7 @@ module.exports = grammar({
     function_definition: $ => seq(
       'fn',
       field('name', $.identifier),
+      optional(field('template_parameters', seq('!', $.template_parameter_list,))),
       field('parameters', $.parameter_list),
       field('return_type', optional($.function_return_type_specifier)),
       field('body', $.compound_statement),
@@ -68,6 +75,12 @@ module.exports = grammar({
       ')',
     ),
 
+    template_parameter_list: $ => seq(
+      '(',
+        commaSep($.identifier), 
+      ')',
+    ),
+
     function_return_type_specifier: $ => seq(
       '->', $.type_specifier
     ),
@@ -77,7 +90,7 @@ module.exports = grammar({
       $.function_definition,
     ),
 
-    parameter: $ => 'TODO', 
+    parameter: $ => seq($.identifier, ':', $.type_specifier),
 
 
 /** 
@@ -91,6 +104,7 @@ module.exports = grammar({
       $.for_statement,
       $.while_statement,
       $.if_statement,
+      $.arena_statement,
       $.expression_statement,
     ),
 
@@ -110,8 +124,16 @@ module.exports = grammar({
       'if', 
       field('condition', $.expression), 
       field('true_block', $.compound_statement), 
-      optional(seq('else', field('else_block', $.compound_statement)))
+      repeat(seq(
+        'else', 
+        optional(seq('if', 
+           field('else_condition', $.expression)
+        )),
+        field('else_block', $.compound_statement),
+      )),
     ),
+
+    arena_statement: $ => seq('arena', $.identifier, ';'),
 
     expression_statement: $ => seq($.expression, ';'),
   
@@ -144,11 +166,16 @@ module.exports = grammar({
       repeat(seq('.', $.identifier)),
     ),
 
-    type_specifier: $ => seq(
-      choice( 'f32', 'f64', 'u32', 'u64', 'string'),
-      optional('&'),
+    type_specifier: $ => choice(
+      $.builtin_type,
+      field('type_id', $.identifier),
+      prec.right(PREC.TYPE_SUFFIX, seq($.type_specifier, $.type_suffix)), 
+      seq('typeof', '(', $.expression, ')'), 
     ),
 
+    builtin_type: $ => choice('f32', 'f64', 'u32', 'u64', 'i32', 'i64', 'string'),
+
+    type_suffix: $ => choice('&', 'const', '[]'),
 
 /**
  *             MISC
@@ -163,6 +190,11 @@ module.exports = grammar({
  *             EXPRESSIONS 
  **/  
     expression: $ => choice(
+      $._expression_not_binary,
+      $.binary_expression,
+    ),
+    
+    _expression_not_binary: $ => choice(
       $.number_literal,
       $.string_literal,
       $.array_literal,
@@ -171,11 +203,14 @@ module.exports = grammar({
       $.identifier,
       $.compound_identifier,
       $.call_expression,
-      $.binary_expression,
-      $.assignment_expression,
+      $.template_expression,
       $.parenthesized_expression,
+      $.unary_expression,
+      $.pointer_expression,
+      $.subscript_expression,
+      $.assignment_expression,
     ),
-
+  
     parenthesized_expression: $ => seq('(', $.expression, ')'),
 
     // Shameless copy from tree-sitter-c
@@ -211,6 +246,18 @@ module.exports = grammar({
       }));
     },
 
+    pointer_expression: $ => prec(PREC.POSTFIX_UNARY, seq(
+      field('argument', $.expression),
+      field('operator', choice('&', '@')),
+    )),
+
+    subscript_expression: $ => seq($.expression, '[', $.expression, ']'),
+
+    unary_expression: $ => prec.left(PREC.UNARY, seq(
+      field('operator', choice('-', '+')),
+      field('argument', $.expression),
+    )),
+
     assignment_expression: $ => prec.right(PREC.ASSIGNMENT, seq(
       field('left', $._assignment_left_expression),
       field('operator', choice(
@@ -231,14 +278,25 @@ module.exports = grammar({
 
     _assignment_left_expression: $ => choice(
       $.identifier,
+      $.compound_identifier,
       $.call_expression,
       $.parenthesized_expression,
+      $.pointer_expression,
+      $.subscript_expression,
     ),
 
     call_expression: $ => seq(
       field('function_expression', $.expression), 
       '(', 
         field('parameters', commaSep($.expression)), 
+      ')',
+    ),
+
+    template_expression: $ => seq(
+      field('function_expression', $.expression), 
+      '!',
+      '(', 
+        field('template_parameters', commaSep($.expression)), 
       ')',
     ),
 

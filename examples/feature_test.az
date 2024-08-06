@@ -274,7 +274,7 @@ fn get(a: arena&, count: u64) -> u64[]
 
     var idx := 0u;
     while idx < z.size() {
-        print("{}\n", z[idx])
+        print("{}\n", z[idx]);
         idx = idx + 1u;
     }
 }
